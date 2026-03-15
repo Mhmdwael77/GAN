@@ -1,3 +1,5 @@
+# GAN
+
 # Build and run (Docker)
 
 Prerequisites:
