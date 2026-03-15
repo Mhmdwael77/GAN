@@ -1,0 +1,31 @@
+todos:
+  - id: 1
+    title: "Add Dockerfile with provided contents"
+    status: "completed"
+  - id: 2
+    title: "Verify Dockerfile created"
+    status: "completed"
+  - id: 3
+    title: "Provide docker build/run commands and notes"
+    status: "completed"
+  - id: 4
+    title: "Update Dockerfile CMD to `GAN.py`"
+    status: "completed"
+  - id: 5
+    title: "Diagnose Docker daemon issue"
+    status: "completed"
+  - id: 6
+    title: "Add minimal `requirements.txt`"
+    status: "completed"
+  - id: 7
+    title: "Add `README.md` with build/run instructions"
+    status: "completed"
+  - id: 8
+    title: "Add `.dockerignore`"
+    status: "completed"
+  - id: 9
+    title: "Add `run_docker_build.ps1` helper"
+    status: "completed"
+  - id: 10
+    title: "Fix Start-Process ArgumentList issue in `run_docker_build.ps1`"
+    status: "completed"
