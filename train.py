@@ -26,8 +26,13 @@ def build_dataset(df: pd.DataFrame):
 
 def main() -> int:
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-    if tracking_uri:
-        mlflow.set_tracking_uri(tracking_uri)
+    if not tracking_uri:
+        raise RuntimeError(
+            "MLFLOW_TRACKING_URI is not set. Refusing to log to a local default store."
+        )
+
+    mlflow.set_tracking_uri(tracking_uri)
+    print("Using MLflow tracking URI from environment")
 
     df = pd.read_csv("data.csv")
     x, y = build_dataset(df)

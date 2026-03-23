@@ -3,30 +3,30 @@ import sys
 
 import mlflow
 
+THRESHOLD = 0.85
+
 
 def main() -> int:
-    threshold = float(os.getenv("ACCURACY_THRESHOLD", "0.85"))
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+    if not tracking_uri:
+        raise RuntimeError("MLFLOW_TRACKING_URI is not set")
 
-    if tracking_uri:
-        mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_tracking_uri(tracking_uri)
 
     with open("model_info.txt", "r", encoding="utf-8") as f:
         run_id = f.read().strip()
 
     run = mlflow.get_run(run_id)
-    metrics = run.data.metrics
-    accuracy = float(metrics.get("accuracy", 0.0))
+    accuracy = run.data.metrics["accuracy"]
 
     print(f"Run ID: {run_id}")
-    print(f"Accuracy: {accuracy:.4f}")
-    print(f"Threshold: {threshold:.2f}")
+    print(f"Accuracy: {accuracy}")
 
-    if accuracy < threshold:
-        print("Accuracy is below threshold. Failing deployment.")
-        return 1
+    if accuracy < THRESHOLD:
+        print(f"Accuracy {accuracy} is below threshold {THRESHOLD}")
+        sys.exit(1)
 
-    print("Accuracy meets threshold. Deployment may continue.")
+    print("Threshold check passed")
     return 0
 
 
