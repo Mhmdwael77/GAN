@@ -3,7 +3,7 @@ import sys
 
 import mlflow
 
-THRESHOLD = 0.70
+THRESHOLD = 0.85
 
 
 def main() -> int:

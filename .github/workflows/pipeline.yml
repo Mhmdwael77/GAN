@@ -4,16 +4,17 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      accuracy_threshold:
-        description: "Deployment accuracy threshold"
+      mock_accuracy:
+        description: "Optional mocked accuracy (0..1) for manual run validation"
         required: false
-        default: "0.85"
+        default: ""
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     env:
       MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+      MOCK_ACCURACY: ${{ github.event.inputs.mock_accuracy || '' }}
 
     steps:
       - name: Checkout repository

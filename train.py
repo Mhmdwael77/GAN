@@ -34,6 +34,13 @@ def main() -> int:
     mlflow.set_tracking_uri(tracking_uri)
     print("Using MLflow tracking URI from environment")
 
+    mock_accuracy_raw = os.getenv("MOCK_ACCURACY", "").strip()
+    mock_accuracy = None
+    if mock_accuracy_raw:
+        mock_accuracy = float(mock_accuracy_raw)
+        if not (0.0 <= mock_accuracy <= 1.0):
+            raise ValueError("MOCK_ACCURACY must be between 0.0 and 1.0")
+
     df = pd.read_csv("data.csv")
     x, y = build_dataset(df)
 
@@ -46,9 +53,13 @@ def main() -> int:
         model.fit(x_train, y_train)
         preds = model.predict(x_test)
         accuracy = float(accuracy_score(y_test, preds))
+        if mock_accuracy is not None:
+            print(f"Using MOCK_ACCURACY override: {mock_accuracy:.4f}")
+            accuracy = mock_accuracy
 
         mlflow.log_param("model", "LogisticRegression")
         mlflow.log_param("rows", int(len(df)))
+        mlflow.log_param("mock_accuracy_override", mock_accuracy_raw or "none")
         mlflow.log_metric("accuracy", accuracy)
 
         run_id = run.info.run_id
