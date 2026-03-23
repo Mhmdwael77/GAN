@@ -2,10 +2,9 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+ARG RUN_ID=unknown
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN echo "Preparing image for MLflow Run ID: ${RUN_ID}" \
+	&& echo "Downloading model for Run ID: ${RUN_ID} (mock)"
 
-COPY . .
-
-CMD ["python", "GAN.py"]
+CMD ["sh", "-c", "echo 'Container ready for Run ID: ${RUN_ID}'"]
