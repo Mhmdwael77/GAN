@@ -2,97 +2,63 @@ name: Assignment 5 Pipeline
 
 on:
   push:
-  workflow_dispatch:
-    inputs:
-      mock_accuracy:
-        description: "Optional mocked accuracy (0..1) for manual run validation"
-        required: false
-        default: ""
 
 jobs:
-  validate:
+  linter:
+    name: Linter
     runs-on: ubuntu-latest
-    env:
-      MLFLOW_TRACKING_URI: sqlite:///mlflow.db
-      MOCK_ACCURACY: ${{ github.event.inputs.mock_accuracy || '' }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install lint dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow dvc
+          pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check .
+
+  train:
+    name: Train model
+    runs-on: ubuntu-latest
+    needs: linter
+    if: ${{ needs.linter.result == 'success' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message || '', '[run-train]') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install training dependencies
+        run: |
+          python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Pull data with DVC
-        run: |
-          if [ -f dvc.yaml ] || [ -d .dvc ] || compgen -G "*.dvc" > /dev/null; then
-            dvc pull
-          else
-            echo "No DVC configuration found, skipping dvc pull"
-          fi
-
-      - name: Train model and log to MLflow
+      - name: Run training
         run: python train.py
 
-      - name: Verify files
+      - name: Ensure error log exists on failure
+        if: failure()
         run: |
-          test -f model_info.txt
-          test -f mlflow.db
-          echo "model_info.txt and mlflow.db exist"
+          test -f error_logs.txt || touch error_logs.txt
 
-      - name: Upload MLflow files
+      - name: Upload error logs artifact
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: mlflow-state
-          path: |
-            model_info.txt
-            mlflow.db
-            mlruns
-          if-no-files-found: ignore
+          name: error-logs
+          path: error_logs.txt
+          if-no-files-found: error
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: validate
-    env:
-      MLFLOW_TRACKING_URI: sqlite:///mlflow.db
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install mlflow
-
-      - name: Download MLflow files
-        uses: actions/download-artifact@v4
-        with:
-          name: mlflow-state
-
-      - name: Verify downloaded files
-        run: |
-          ls -la
-          test -f model_info.txt
-          test -f mlflow.db
-
-      - name: Check accuracy threshold
-        run: python check_threshold.py
-
-      - name: Mock Docker build
-        run: |
-          echo "Building Docker image for Run ID: $(cat model_info.txt)"
-          docker build --build-arg RUN_ID=$(cat model_info.txt) -t my-model:latest .
+      - name: Cleanup temporary cloud volumes
+        if: always()
+        run: echo "Cleaning up temporary cloud volumes..."
